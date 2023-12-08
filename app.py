@@ -10,7 +10,7 @@ import strawberry
 import typing
 import ast
 from typing import Optional, List
-from filter import filter_by_keys
+from filter import filter_by_keys, filter_by_product
 
 from flask import Flask
 from flask_cors import CORS
@@ -59,6 +59,10 @@ class UpdateAsset:
 class FilterKeys:
     ownerPublicKey: Optional[str]
     recipientPublicKey: Optional[str]
+
+@strawberry.input
+class FilterProductKeys:
+    product: Optional[str]
 
 @strawberry.type
 class Keys:
@@ -134,6 +138,26 @@ class Query:
                 ))
             except Exception as e:
                 print(e)
+        return records
+    
+    @strawberry.field
+    def getFilteredProductTransactions(self, filter: Optional[FilterProductKeys]) -> List[RetrieveTransaction]:
+        url = f"{protocol}{db_root_url}{fetch_all_endpoint}"
+        filter.product = filter.product if filter.product.strip() else None
+        json_data = filter_by_product(url, filter.product)
+        records = []
+        for data in json_data:
+            records.append(RetrieveTransaction(
+            id=data["id"],
+            version=data["version"],
+            amount=data["outputs"][0]["amount"],
+            uri=data["outputs"][0]["condition"]["uri"],
+            type=data["outputs"][0]["condition"]["details"]["type"],
+            publicKey=data["outputs"][0]["condition"]["details"]["public_key"],
+            operation=data["operation"],
+            metadata=data["metadata"],
+            asset=str(data["asset"])
+            ))
         return records
 
 @strawberry.type
