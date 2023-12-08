@@ -57,6 +57,18 @@ def get_json_objects_by_public_key(json_data, owner_public_key=None, recipient_p
                 print(e)
     return matching_objects
 
+def get_json_objects_by_product(json_data, product=None):
+    matching_objects = []
+    if product != None:
+        for obj in json_data[0]:
+            if 'Industry' in obj['asset']['data']:
+                if product in obj['asset']['data']['Industry']:
+                    matching_objects.append(obj)
+    else:
+        for obj in json_data[0]:
+            matching_objects.append(obj)
+    return matching_objects
+
 def get_json_data(url, ownerPublicKey=None, recipientPublicKey=None):
     try:
         response = requests.get(url)
@@ -80,12 +92,40 @@ def get_json_data(url, ownerPublicKey=None, recipientPublicKey=None):
                 return matching_objects
         else:
             print(f"Error: Unable to retrieve data from {url}. Status code: {response.status_code}")
-            return None
+            return []
 
     except requests.exceptions.RequestException as e:
         print(f"Error: {e}")
-        return None
+        return []
+
+def get_product_json_data(url, product=None):
+    try:
+        response = requests.get(url)
+        # Check if the request was successful (status code 200)
+        if response.status_code == 200:
+            # Parse the JSON data from the response
+            json_text = fix_json_with_commas(response.text)
+            json_data = json.loads(json_text)
+            if product == None:
+                matching_objects = get_json_objects_by_product(json_data, None)
+                return matching_objects
+            else:
+                # Get all JSON objects that match the given product
+                matching_objects = get_json_objects_by_product(json_data, product)
+                return matching_objects
+        else:
+            print(f"Error: Unable to retrieve data from {url}. Status code: {response.status_code}")
+            return []
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error: {e}")
+        return []
+
 
 def filter_by_keys(url, ownerPublicKey, recipientPublicKey):
     json_data = get_json_data(url, ownerPublicKey, recipientPublicKey)
+    return json_data
+
+def filter_by_product(url, product):
+    json_data = get_product_json_data(url, product)
     return json_data
